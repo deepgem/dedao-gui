@@ -1,0 +1,33 @@
+name: build-macos
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    runs-on: macos-latest   # Apple Silicon (arm64)
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Wails v3 CLI
+        run: go install github.com/wailsapp/wails/v3/cmd/wails3@v3.0.0-beta.28
+
+      - name: Package .app
+        run: wails3 task darwin:package
+
+      - name: Zip (preserve bundle structure)
+        run: ditto -c -k --keepParent bin/dedao-gui.app dedao-gui-macos-arm64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dedao-gui-macos-arm64
+          path: dedao-gui-macos-arm64.zip
